@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Union Airdrop Checker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .button-gradient {
+            background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
+        }
+        
+        .button-gradient:hover {
+            background: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 100%);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md mx-auto">
+        <div class="bg-gray-900 rounded-2xl p-8 card-shadow border border-gray-800">
+            <div class="text-center mb-8">
+                <div class="mb-6">
+                    <img 
+                        src="https://pbs.twimg.com/profile_images/1916863452536020992/7Hpmlw2w_400x400.png" 
+                        alt="Union Logo" 
+                        class="w-20 h-20 mx-auto object-contain bg-white rounded-lg p-2"
+                    />
+                </div>
+                
+                <h1 class="text-3xl font-bold text-white mb-3">Union Airdrop Checker</h1>
+                
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    Check your $U allocation.<br>
+                    This is for entertainment purposes only.
+                </p>
+            </div>
+            
+            <div id="inputSection" class="space-y-6">
+                <div>
+                    <input 
+                        type="text" 
+                        id="walletAddress" 
+                        placeholder="Enter your wallet address"
+                        class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all duration-200"
+                    >
+                    <p id="errorMessage" class="text-red-400 text-sm mt-2 h-4 text-center"></p>
+                </div>
+                
+                <button 
+                    id="checkAllocationBtn"
+                    class="w-full py-3 px-6 button-gradient text-black font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900"
+                >
+                    Check Allocation
+                </button>
+            </div>
+            
+            <div id="resultsSection" class="hidden space-y-6">
+                <div class="text-center">
+                    <h2 class="text-2xl font-bold text-green-400 mb-2">🎉 Congratulations!</h2>
+                    <p class="text-gray-300 text-sm">Your allocation has been calculated</p>
+                </div>
+                
+                <div class="text-center bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <p class="text-gray-400 text-sm mb-2">Total Allocation</p>
+                    <p id="totalAllocation" class="text-4xl font-bold text-white">0 $U</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-white">Calculation Breakdown</h3>
+                    
+                    <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-300">Base Allocation</span>
+                            <span id="baseAllocation" class="text-white font-semibold">0 $U</span>
+                        </div>
+                    </div>
+                    
+                    <div id="bonusAllocations" class="space-y-3">
+                        </div>
+                </div>
+                
+                <button 
+                    id="checkAnotherBtn"
+                    class="w-full py-3 px-6 bg-gray-800 text-white font-semibold rounded-lg border border-gray-700 transition-all duration-200 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900"
+                >
+                    Check Another Address
+                </button>
+            </div>
+            
+            <div class="mt-8 pt-6 border-t border-gray-800 text-center space-y-2">
+                <p class="text-gray-500 text-xs">
+                    It's just for fun! This checker is a simulation and does not represent a real airdrop.
+                </p>
+                <p class="text-gray-500 text-xs">
+                    Made with 🖤 by 
+                    <a href="https://x.com/ll_l_ll_7" target="_blank" class="text-blue-500 hover:text-blue-400 transition-colors duration-200">
+                     0xMohamed
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Allocation calculation logic
+        class AllocationCalculator {
+            constructor() {
+                this.bonusTypes = {
+                    ceremony: {
+                        name: "Contributed in Ceremony",
+                        chance: 0.6, // 60%
+                        allocation: 1000 // Fixed amount
+                    },
+                    testnet: {
+                        name: "Testnet Reward",
+                        chance: 0.5, // 50%
+                        minAllocation: 100,
+                        maxAllocation: 10000
+                    },
+                    kaito: {
+                        name: "Kaito Reward",
+                        chance: 0.25, // 25%
+                        minAllocation: 5000,
+                        maxAllocation: 15000
+                    },
+                    nodeOperator: {
+                        name: "Node Operator",
+                        chance: 0.1, // 10%
+                        minAllocation: 7000,
+                        maxAllocation: 20000
+                    }
+                };
+            }
+
+            // Generate a deterministic random number based on wallet address
+            generateSeed(walletAddress) {
+                let hash = 0;
+                for (let i = 0; i < walletAddress.length; i++) {
+                    const char = walletAddress.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // Convert to 32-bit integer
+                }
+                return Math.abs(hash);
+            }
+
+            // Seeded random number generator
+            seededRandom(seed) {
+                const x = Math.sin(seed) * 10000;
+                return x - Math.floor(x);
+            }
+
+            // Calculate base allocation (500-2500 $U)
+            calculateBaseAllocation(seed) {
+                const random = this.seededRandom(seed);
+                return Math.floor(500 + (random * 2000)); // 500 to 2500
+            }
+
+            // Check if user qualifies for a bonus
+            qualifiesForBonus(seed, bonusType) {
+                const random = this.seededRandom(seed + bonusType.name.length);
+                return random < bonusType.chance;
+            }
+
+            // Calculate bonus allocation amount
+            calculateBonusAmount(seed, bonusType) {
+                if (bonusType.allocation) {
+                    // Fixed allocation (ceremony)
+                    return bonusType.allocation;
+                } else {
+                    // Random allocation within range
+                    const random = this.seededRandom(seed + bonusType.name.length * 2);
+                    const range = bonusType.maxAllocation - bonusType.minAllocation;
+                    return Math.floor(bonusType.minAllocation + (random * range));
+                }
+            }
+
+            // Main calculation function
+            calculateAllocation(walletAddress) {
+                // FIX: Removed validation from here. The UI Controller will handle it.
+                const seed = this.generateSeed(walletAddress.trim());
+                
+                // Check eligibility (10% chance of being ineligible)
+                const eligibilityRandom = this.seededRandom(seed + 9999);
+                if (eligibilityRandom < 0.1) {
+                    return {
+                        eligible: false,
+                        message: "Unfortunately Not eligible"
+                    };
+                }
+                
+                // Calculate base allocation
+                const baseAllocation = this.calculateBaseAllocation(seed);
+                
+                // Calculate bonuses
+                const bonuses = [];
+                let totalBonusAllocation = 0;
+
+                Object.entries(this.bonusTypes).forEach(([key, bonusType], index) => {
+                    const bonusSeed = seed + index * 1000; // Different seed for each bonus
+                    
+                    if (this.qualifiesForBonus(bonusSeed, bonusType)) {
+                        const amount = this.calculateBonusAmount(bonusSeed, bonusType);
+                        bonuses.push({
+                            name: bonusType.name,
+                            amount: amount
+                        });
+                        totalBonusAllocation += amount;
+                    }
+                });
+
+                const totalAllocation = baseAllocation + totalBonusAllocation;
+
+                return {
+                    eligible: true,
+                    baseAllocation,
+                    bonuses,
+                    totalAllocation
+                };
+            }
+
+            // Validate Ethereum address format
+            isValidEthereumAddress(address) {
+                // Check if it starts with 0x and has 42 characters total (0x + 40 hex chars)
+                const ethAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+                return ethAddressRegex.test(address);
+            }
+        }
+
+        // UI Controller
+        class UIController {
+            constructor() {
+                this.calculator = new AllocationCalculator();
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                const checkBtn = document.getElementById('checkAllocationBtn');
+                const checkAnotherBtn = document.getElementById('checkAnotherBtn');
+                const walletInput = document.getElementById('walletAddress');
+
+                checkBtn.addEventListener('click', () => this.handleCheckAllocation());
+                checkAnotherBtn.addEventListener('click', () => this.handleCheckAnother());
+                
+                // Allow Enter key to trigger check
+                walletInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.handleCheckAllocation();
+                    }
+                });
+            }
+
+            handleCheckAllocation() {
+                // Clear previous error messages
+                document.getElementById('errorMessage').textContent = '';
+                const walletAddress = document.getElementById('walletAddress').value;
+                
+                try {
+                    // Validate immediately before showing loading state
+                    if (!walletAddress || walletAddress.trim().length === 0) {
+                        throw new Error("Please enter a wallet address");
+                    }
+
+                    // Validate Ethereum address format
+                    if (!this.calculator.isValidEthereumAddress(walletAddress.trim())) {
+                        throw new Error("Invalid wallet address format");
+                    }
+                    
+                    // Show loading state only after validation passes
+                    this.showLoadingState();
+                    
+                    // Simulate loading delay for better UX
+                    setTimeout(() => {
+                        // The calculation itself doesn't need a try/catch here
+                        // because we've already validated the input.
+                        const result = this.calculator.calculateAllocation(walletAddress);
+                        this.displayResults(result);
+                    }, 1000);
+                    
+                } catch (error) {
+                    this.showError(error.message);
+                }
+            }
+
+            handleCheckAnother() {
+                // Reset form
+                document.getElementById('walletAddress').value = '';
+                document.getElementById('errorMessage').textContent = '';
+                
+                // Restore original results section HTML structure
+                const resultsSection = document.getElementById('resultsSection');
+                resultsSection.innerHTML = `
+                    <div class="text-center">
+                        <h2 class="text-2xl font-bold text-green-400 mb-2">🎉 Congratulations!</h2>
+                        <p class="text-gray-300 text-sm">Your allocation has been calculated</p>
+                    </div>
+                    
+                    <div class="text-center bg-gray-800 rounded-lg p-6 border border-gray-700">
+                        <p class="text-gray-400 text-sm mb-2">Total Allocation</p>
+                        <p id="totalAllocation" class="text-4xl font-bold text-white">0 $U</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-white">Calculation Breakdown</h3>
+                        
+                        <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-300">Base Allocation</span>
+                                <span id="baseAllocation" class="text-white font-semibold">0 $U</span>
+                            </div>
+                        </div>
+                        
+                        <div id="bonusAllocations" class="space-y-3">
+                            </div>
+                    </div>
+                    
+                    <button 
+                        id="checkAnotherBtn"
+                        class="w-full py-3 px-6 bg-gray-800 text-white font-semibold rounded-lg border border-gray-700 transition-all duration-200 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900"
+                    >
+                        Check Another Address
+                    </button>
+                `;
+                
+                // Re-add event listener to the restored button
+                document.getElementById('checkAnotherBtn').addEventListener('click', () => {
+                    this.handleCheckAnother();
+                });
+                
+                this.showInputSection();
+            }
+
+            showLoadingState() {
+                const checkBtn = document.getElementById('checkAllocationBtn');
+                checkBtn.innerHTML = '<span class="pulse-animation">Calculating...</span>';
+                checkBtn.disabled = true;
+            }
+
+            showInputSection() {
+                document.getElementById('inputSection').classList.remove('hidden');
+                document.getElementById('resultsSection').classList.add('hidden');
+                
+                // Reset button state
+                const checkBtn = document.getElementById('checkAllocationBtn');
+                checkBtn.innerHTML = 'Check Allocation';
+                checkBtn.disabled = false;
+            }
+
+            displayResults(result) {
+                // Hide input section and show results
+                document.getElementById('inputSection').classList.add('hidden');
+                document.getElementById('resultsSection').classList.remove('hidden');
+                document.getElementById('resultsSection').classList.add('fade-in');
+
+                // Check if user is eligible
+                if (!result.eligible) {
+                    this.displayIneligibleMessage(result.message);
+                    return;
+                }
+
+                // Display total allocation
+                document.getElementById('totalAllocation').textContent = 
+                    `${result.totalAllocation.toLocaleString()} $U`;
+
+                // Display base allocation
+                document.getElementById('baseAllocation').textContent = 
+                    `${result.baseAllocation.toLocaleString()} $U`;
+
+                // Display bonus allocations
+                this.displayBonuses(result.bonuses);
+            }
+
+            displayIneligibleMessage(message) {
+                // Update the congratulations section to show ineligibility
+                const resultsSection = document.getElementById('resultsSection');
+                resultsSection.innerHTML = `
+                    <div class="text-center space-y-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-red-400 mb-2">😔 ${message}</h2>
+                            <p class="text-gray-300 text-sm">Better luck next time!</p>
+                        </div>
+                        
+                        <div class="text-center bg-gray-800 rounded-lg p-6 border border-gray-700">
+                            <p class="text-gray-400 text-sm mb-2">Total Allocation</p>
+                            <p class="text-4xl font-bold text-red-400">0 $U</p>
+                        </div>
+                        
+                        <button 
+                            id="checkAnotherBtnIneligible"
+                            class="w-full py-3 px-6 bg-gray-800 text-white font-semibold rounded-lg border border-gray-700 transition-all duration-200 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900"
+                        >
+                            Check Another Address
+                        </button>
+                    </div>
+                `;
+                
+                // Add event listener to the new button
+                document.getElementById('checkAnotherBtnIneligible').addEventListener('click', () => {
+                    this.handleCheckAnother();
+                });
+            }
+
+            displayBonuses(bonuses) {
+                const bonusContainer = document.getElementById('bonusAllocations');
+                bonusContainer.innerHTML = '';
+
+                bonuses.forEach(bonus => {
+                    const bonusElement = document.createElement('div');
+                    bonusElement.className = 'bg-gray-800 rounded-lg p-4 border border-gray-700';
+                    bonusElement.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-green-400">✅</span>
+                                <span class="text-gray-300">${bonus.name}</span>
+                            </div>
+                            <span class="text-white font-semibold">+${bonus.amount.toLocaleString()} $U</span>
+                        </div>
+                    `;
+                    bonusContainer.appendChild(bonusElement);
+                });
+
+                // If no bonuses, show a message
+                if (bonuses.length === 0) {
+                    const noBonusElement = document.createElement('div');
+                    noBonusElement.className = 'bg-gray-800 rounded-lg p-4 border border-gray-700 text-center';
+                    noBonusElement.innerHTML = `
+                        <span class="text-gray-400 text-sm">No bonus allocations this time</span>
+                    `;
+                    bonusContainer.appendChild(noBonusElement);
+                }
+            }
+
+            showError(message) {
+                // FIX: Display error in the UI instead of a disruptive alert
+                document.getElementById('errorMessage').textContent = message;
+                
+                // Reset button state
+                const checkBtn = document.getElementById('checkAllocationBtn');
+                checkBtn.innerHTML = 'Check Allocation';
+                checkBtn.disabled = false;
+            }
+        }
+
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new UIController();
+        });
+    </script>
+</body>
+</html>
